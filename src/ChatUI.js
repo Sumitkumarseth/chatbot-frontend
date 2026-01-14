@@ -8,7 +8,7 @@ export default function ChatUI() {
   const [history, setHistory] = useState([]);
 
   const PROJECT_ID = "6966697d271449d58f2bef51";
-  // const TOKEN = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NjY2MzYzMjcxNDQ5ZDU4ZjJiZWY0YyIsImlhdCI6MTc2ODMxODYxM30.TKwbU7TMspTI8StMe3sRjtWs1c6MW4QFMNt7X1padcA";
+  const TOKEN = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NjY2MzYzMjcxNDQ5ZDU4ZjJiZWY0YyIsImlhdCI6MTc2ODMxODYxM30.TKwbU7TMspTI8StMe3sRjtWs1c6MW4QFMNt7X1padcA";
 
   const sendMsg = async () => {
     if (!msg.trim()) return;
@@ -20,9 +20,15 @@ export default function ChatUI() {
 
     try {
       const res = await axios.post(
-        `https://chatbot-backend-dcvu.onrender.com/api/chat/${PROJECT_ID}`,
-        { message: msg }
-      );
+  `https://chatbot-backend-dcvu.onrender.com/api/chat/${PROJECT_ID}`,
+  { message: msg },
+  {
+    headers: {
+      Authorization: TOKEN
+    }
+  }
+);
+
 
       const botMsg = { role: "bot", text: res.data.reply };
       setMessages((prev) => [...prev, botMsg]);
