@@ -20,7 +20,7 @@ export default function ChatUI() {
 
     try {
       const res = await axios.post(
-        `http://localhost:5000/api/chat/${PROJECT_ID}`,
+        `https://chatbot-backend-dcvu.onrender.com/api/chat/${PROJECT_ID}`,
         { message: msg },
         {
           headers: { Authorization: TOKEN },
