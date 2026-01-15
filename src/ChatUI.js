@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 
 export default function ChatUI() {
@@ -6,9 +6,34 @@ export default function ChatUI() {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState([]);
+  const chatRef = useRef(null);
 
   const PROJECT_ID = "6966697d271449d58f2bef51";
-  const TOKEN = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NjY2MzYzMjcxNDQ5ZDU4ZjJiZWY0YyIsImlhdCI6MTc2ODMxODYxM30.TKwbU7TMspTI8StMe3sRjtWs1c6MW4QFMNt7X1padcA";
+  const TOKEN =
+    "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
+
+  // auto scroll bottom
+  useEffect(() => {
+    chatRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
+
+  const typeEffect = (text) => {
+    let i = 0;
+    let temp = "";
+
+    const interval = setInterval(() => {
+      temp += text[i];
+      i++;
+
+      setMessages((prev) => {
+        const arr = [...prev];
+        arr[arr.length - 1].text = temp;
+        return arr;
+      });
+
+      if (i === text.length) clearInterval(interval);
+    }, 30);
+  };
 
   const sendMsg = async () => {
     if (!msg.trim()) return;
@@ -20,26 +45,19 @@ export default function ChatUI() {
 
     try {
       const res = await axios.post(
-  `https://chatbot-backend-dcvu.onrender.com/api/chat/${PROJECT_ID}`,
-  { message: msg },
-  {
-    headers: {
-      Authorization: TOKEN
-    }
-  }
-);
+        `https://chatbot-backend-dcvu.onrender.com/api/chat/${PROJECT_ID}`,
+        { message: msg },
+        { headers: { Authorization: TOKEN } }
+      );
 
-
-      const botMsg = { role: "bot", text: res.data.reply };
+      const botMsg = { role: "bot", text: "" };
       setMessages((prev) => [...prev, botMsg]);
 
-      // Auto history save
+      typeEffect(res.data.reply);
+
       setHistory((prev) => [
         ...prev,
-        {
-          id: Date.now(),
-          title: userMsg.text.slice(0, 25),
-        },
+        { id: Date.now(), title: msg.slice(0, 25) },
       ]);
     } catch (err) {
       alert("Server error");
@@ -52,11 +70,7 @@ export default function ChatUI() {
     <div style={styles.wrapper}>
       {/* SIDEBAR */}
       <div style={styles.sidebar}>
-        <h3 style={{ marginBottom: "10px" }}>🕒 History</h3>
-
-        {history.length === 0 && (
-          <p style={{ color: "#64748b" }}>No chats yet</p>
-        )}
+        <h3>🕒 History</h3>
 
         {history.map((h) => (
           <div key={h.id} style={styles.historyItem}>
@@ -65,15 +79,11 @@ export default function ChatUI() {
         ))}
       </div>
 
-      {/* CHAT AREA */}
+      {/* CHAT */}
       <div style={styles.chatArea}>
         <div style={styles.header}>🤖 Chatbot</div>
 
         <div style={styles.chatBox}>
-          {messages.length === 0 && (
-            <p style={styles.empty}>Start typing 🚀</p>
-          )}
-
           {messages.map((c, i) => (
             <div
               key={i}
@@ -91,7 +101,6 @@ export default function ChatUI() {
                   padding: "12px 16px",
                   borderRadius: "18px",
                   maxWidth: "75%",
-                  color: "white",
                 }}
               >
                 {c.text}
@@ -100,10 +109,14 @@ export default function ChatUI() {
           ))}
 
           {loading && (
-            <div style={{ margin: "10px", color: "#94a3b8" }}>
-              Bot typing...
+            <div style={styles.typing}>
+              <span></span>
+              <span></span>
+              <span></span>
             </div>
           )}
+
+          <div ref={chatRef}></div>
         </div>
 
         {/* INPUT */}
@@ -113,7 +126,7 @@ export default function ChatUI() {
             onChange={(e) => setMsg(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && sendMsg()}
             style={styles.input}
-            placeholder="Send a message..."
+            placeholder="Type message..."
           />
 
           <button onClick={sendMsg} style={styles.sendBtn}>
@@ -135,20 +148,17 @@ const styles = {
   },
 
   sidebar: {
-    width: "260px",
-    background: "#020617",
+    width: "240px",
+    padding: "10px",
     borderRight: "1px solid #1e293b",
-    padding: "12px",
-    overflowY: "auto",
   },
 
   historyItem: {
-    padding: "8px",
+    padding: "6px",
+    margin: "4px 0",
     borderRadius: "6px",
     cursor: "pointer",
-    color: "#cbd5f5",
     background: "#020617",
-    marginBottom: "6px",
   },
 
   chatArea: {
@@ -158,10 +168,9 @@ const styles = {
   },
 
   header: {
+    padding: "10px",
     textAlign: "center",
-    padding: "12px",
     borderBottom: "1px solid #1e293b",
-    fontWeight: "bold",
   },
 
   chatBox: {
@@ -170,10 +179,10 @@ const styles = {
     padding: "10px",
   },
 
-  empty: {
-    textAlign: "center",
-    marginTop: "40px",
-    color: "#64748b",
+  typing: {
+    display: "flex",
+    gap: "5px",
+    padding: "10px",
   },
 
   inputBar: {
@@ -187,16 +196,14 @@ const styles = {
     padding: "12px",
     borderRadius: "20px",
     border: "none",
-    outline: "none",
   },
 
   sendBtn: {
     marginLeft: "8px",
-    padding: "10px 16px",
     borderRadius: "50%",
+    padding: "10px 16px",
     border: "none",
     background: "#2563eb",
     color: "white",
-    cursor: "pointer",
   },
 };
